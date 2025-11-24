@@ -7,7 +7,7 @@ export default function Settings() {
         smtpPort: 587,
         smtpUser: '',
         smtpPass: '',
-        emailTemplate: ''
+        emailTemplate: 'Olá {name},\n\nA Direção, os Docentes e não Docentes da Escola Profissional de Vila do Conde desejam-te um feliz aniversário.\n\nCom os melhores cumprimentos;\nA Direção'
     });
     const [message, setMessage] = useState('');
 
