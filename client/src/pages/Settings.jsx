@@ -17,7 +17,7 @@ export default function Settings() {
 
     const fetchConfig = async () => {
         try {
-            const res = await axios.get('http://localhost:3000/api/config');
+            const res = await axios.get('/api/config');
             // Don't show the password
             const { smtpPass, ...rest } = res.data;
             setConfig({ ...rest, smtpPass: '' });
@@ -29,7 +29,7 @@ export default function Settings() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.post('http://localhost:3000/api/config', config);
+            await axios.post('/api/config', config);
             setMessage('Settings saved successfully!');
             setTimeout(() => setMessage(''), 3000);
         } catch (error) {

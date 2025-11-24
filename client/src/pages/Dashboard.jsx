@@ -12,7 +12,7 @@ export default function Dashboard() {
 
     const fetchPeople = async () => {
         try {
-            const res = await axios.get('http://localhost:3000/api/people');
+            const res = await axios.get('/api/people');
             setPeople(res.data);
             calculateUpcoming(res.data);
         } catch (error) {

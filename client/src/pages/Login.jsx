@@ -20,7 +20,7 @@ export default function Login() {
 
     const checkSetup = async () => {
         try {
-            const res = await axios.get('http://localhost:3000/api/auth/setup-check');
+            const res = await axios.get('/api/auth/setup-check');
             if (!res.data.hasUsers) {
                 setIsRegistering(true);
             }

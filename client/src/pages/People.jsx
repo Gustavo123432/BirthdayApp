@@ -13,7 +13,7 @@ export default function People() {
 
     const fetchPeople = async () => {
         try {
-            const res = await axios.get('http://localhost:3000/api/people');
+            const res = await axios.get('/api/people');
             setPeople(res.data);
         } catch (error) {
             console.error('Error fetching people:', error);
@@ -24,9 +24,9 @@ export default function People() {
         e.preventDefault();
         try {
             if (isEditing) {
-                await axios.put(`http://localhost:3000/api/people/${isEditing}`, formData);
+                await axios.put(`/api/people/${isEditing}`, formData);
             } else {
-                await axios.post('http://localhost:3000/api/people', formData);
+                await axios.post('/api/people', formData);
             }
             setFormData({ name: '', email: '', birthdate: '' });
             setIsEditing(null);
@@ -40,7 +40,7 @@ export default function People() {
     const handleDelete = async (id) => {
         if (!window.confirm('Are you sure?')) return;
         try {
-            await axios.delete(`http://localhost:3000/api/people/${id}`);
+            await axios.delete(`/api/people/${id}`);
             fetchPeople();
         } catch (error) {
             console.error('Error deleting person:', error);
