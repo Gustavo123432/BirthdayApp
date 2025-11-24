@@ -145,6 +145,30 @@ app.delete('/api/people/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// Bulk insert people (for Excel import)
+app.post('/api/people/bulk', authenticateToken, async (req, res) => {
+  try {
+    const { people } = req.body;
+
+    if (!Array.isArray(people) || people.length === 0) {
+      return res.status(400).json({ error: 'Invalid data format' });
+    }
+
+    const created = await prisma.person.createMany({
+      data: people.map(p => ({
+        name: p.name,
+        email: p.email,
+        birthdate: new Date(p.birthdate),
+      })),
+      skipDuplicates: true,
+    });
+
+    res.json({ message: `${created.count} people imported successfully`, count: created.count });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get Config
 app.get('/api/config', authenticateToken, async (req, res) => {
   try {

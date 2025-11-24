@@ -1,11 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
+import * as XLSX from 'xlsx';
 
 export default function People() {
     const [people, setPeople] = useState([]);
     const [formData, setFormData] = useState({ name: '', email: '', birthdate: '' });
     const [isEditing, setIsEditing] = useState(null);
+    const [importMessage, setImportMessage] = useState('');
+    const fileInputRef = useRef(null);
 
     useEffect(() => {
         fetchPeople();
@@ -56,6 +59,53 @@ export default function People() {
         setIsEditing(person.id);
     };
 
+    const handleFileImport = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            const data = await file.arrayBuffer();
+            const workbook = XLSX.read(data);
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+            const peopleData = jsonData.map(row => {
+                // Parse date from DD/MM/YYYY format
+                const dateParts = row['Data de Nascimento']?.split('/');
+                let birthdate;
+                if (dateParts && dateParts.length === 3) {
+                    birthdate = `${dateParts[2]}-${dateParts[1].padStart(2, '0')}-${dateParts[0].padStart(2, '0')}`;
+                } else {
+                    birthdate = row['Data de Nascimento'];
+                }
+
+                return {
+                    name: row['Nome'] || row['Name'] || '',
+                    email: row['Email'] || '',
+                    birthdate: birthdate
+                };
+            }).filter(p => p.name && p.email && p.birthdate);
+
+            if (peopleData.length === 0) {
+                setImportMessage('No valid data found in file');
+                return;
+            }
+
+            const res = await axios.post('/api/people/bulk', { people: peopleData });
+            setImportMessage(res.data.message);
+            fetchPeople();
+            setTimeout(() => setImportMessage(''), 5000);
+        } catch (error) {
+            console.error('Import error:', error);
+            setImportMessage('Error importing file: ' + (error.response?.data?.error || error.message));
+        }
+
+        // Reset file input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div className="md:flex md:items-center md:justify-between">
@@ -64,7 +114,29 @@ export default function People() {
                         People Management
                     </h2>
                 </div>
+                <div className="mt-4 flex md:mt-0 md:ml-4">
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileImport}
+                        accept=".xlsx,.xls"
+                        className="hidden"
+                        id="excel-upload"
+                    />
+                    <label
+                        htmlFor="excel-upload"
+                        className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
+                    >
+                        Import Excel
+                    </label>
+                </div>
             </div>
+
+            {importMessage && (
+                <div className={`p-4 rounded-md ${importMessage.includes('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                    {importMessage}
+                </div>
+            )}
 
             {/* Form */}
             <div className="bg-white shadow sm:rounded-lg p-6">
