@@ -238,12 +238,15 @@ app.post('/api/config/test-email', authenticateToken, async (req, res) => {
       }
     });
 
+    // Use the configured template and replace {name} with "Test User"
+    const message = config.emailTemplate.replace(/{name}/g, 'Test User');
+
     await transporter.sendMail({
       from: config.smtpUser,
       to: email,
-      subject: 'Test Email - Birthday App',
-      text: 'This is a test email from your Birthday App configuration.',
-      html: '<p>This is a test email from your <strong>Birthday App</strong> configuration.</p>'
+      subject: 'Teste - Felicitações de Aniversário',
+      text: message.replace(/<[^>]*>/g, ''), // Strip HTML for text version
+      html: message.replace(/\n/g, '<br>') // Convert line breaks to <br> for HTML
     });
 
     res.json({ message: 'Test email sent successfully' });
@@ -293,14 +296,14 @@ const sendBirthdayEmails = async () => {
     });
 
     for (const person of birthdays) {
-      const message = config.emailTemplate.replace('{name}', person.name);
+      const message = config.emailTemplate.replace(/{name}/g, person.name);
 
       await transporter.sendMail({
         from: config.smtpUser,
         to: person.email,
-        subject: 'Happy Birthday!',
-        text: message,
-        html: `<p>${message}</p>`
+        subject: 'Felicitações de Aniversário',
+        text: message.replace(/<[^>]*>/g, ''), // Strip HTML for text version
+        html: message.replace(/\n/g, '<br>') // Convert line breaks to <br>
       });
       console.log(`Email sent to ${person.name}`);
     }
@@ -309,7 +312,7 @@ const sendBirthdayEmails = async () => {
   }
 };
 
-cron.schedule('0 9 * * *', sendBirthdayEmails);
+cron.schedule('0 8 * * *', sendBirthdayEmails);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
