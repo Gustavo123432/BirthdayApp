@@ -22,7 +22,7 @@ model Config {
   smtpPort      Int     @default(587)
   smtpUser      String  @default("")
   smtpPass      String  @default("")
-  emailTemplate String  @default("Happy Birthday, {name}!")
+  emailTemplate String  @default("Happy Birthday, {name}!") @db.Text
   updatedAt     DateTime @updatedAt
 }
 

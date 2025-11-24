@@ -7,7 +7,7 @@ export default function Settings() {
         smtpPort: 587,
         smtpUser: '',
         smtpPass: '',
-        emailTemplate: 'Olá {name},\n\nA Direção, os Docentes e não Docentes da Escola Profissional de Vila do Conde desejam-te um feliz aniversário.\n\nCom os melhores cumprimentos;\nA Direção'
+        emailTemplate: 'Ex.mo(a) {name},\n\nEm nome da Direção, do pessoal docente e não docente, temos o prazer de lhe desejar um feliz aniversário, repleto de saúde, sucesso e momentos de alegria.\n\nQue este dia seja especial e que o próximo ano da sua vida seja marcado por realizações pessoais e profissionais.\n\nCom os nossos melhores cumprimentos,\n\nA Direção\nEscola Profissional de Vila do Conde'
     });
     const [message, setMessage] = useState('');
 
@@ -100,7 +100,7 @@ export default function Settings() {
                         <label className="block text-sm font-medium text-gray-700">Email Template</label>
                         <p className="text-xs text-gray-500 mb-2">Use {'{name}'} to insert the person's name.</p>
                         <textarea
-                            rows={4}
+                            rows={12}
                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2"
                             value={config.emailTemplate}
                             onChange={e => setConfig({ ...config, emailTemplate: e.target.value })}
