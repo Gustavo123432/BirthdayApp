@@ -108,8 +108,6 @@ export default function Settings() {
                     </div>
                 </div>
 
-                </div>
-
                 <div className="pt-5 border-t border-gray-200">
                     <h3 className="text-lg font-medium text-gray-900 mb-4">Test Configuration</h3>
                     <div className="flex gap-4 items-end">
@@ -153,7 +151,7 @@ export default function Settings() {
                         </button>
                     </div>
                 </div>
-            </form >
-        </div >
+            </form>
+        </div>
     );
 }
