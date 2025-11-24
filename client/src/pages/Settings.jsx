@@ -108,6 +108,41 @@ export default function Settings() {
                     </div>
                 </div>
 
+                </div>
+
+                <div className="pt-5 border-t border-gray-200">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Test Configuration</h3>
+                    <div className="flex gap-4 items-end">
+                        <div className="flex-1">
+                            <label className="block text-sm font-medium text-gray-700">Send Test Email To</label>
+                            <input
+                                type="email"
+                                placeholder="Enter email address"
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2"
+                                id="test-email-input"
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                const email = document.getElementById('test-email-input').value;
+                                if (!email) return alert('Please enter an email address');
+                                try {
+                                    setMessage('Sending test email...');
+                                    await axios.post('/api/config/test-email', { email });
+                                    setMessage('Test email sent successfully!');
+                                } catch (error) {
+                                    console.error(error);
+                                    setMessage('Error sending test email: ' + (error.response?.data?.error || error.message));
+                                }
+                            }}
+                            className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        >
+                            Send Test Email
+                        </button>
+                    </div>
+                </div>
+
                 <div className="pt-5">
                     <div className="flex justify-end">
                         <button
@@ -118,7 +153,7 @@ export default function Settings() {
                         </button>
                     </div>
                 </div>
-            </form>
-        </div>
+            </form >
+        </div >
     );
 }

@@ -191,6 +191,44 @@ app.post('/api/config', authenticateToken, async (req, res) => {
   }
 });
 
+// Test Email
+app.post('/api/config/test-email', authenticateToken, async (req, res) => {
+  try {
+    const { email } = req.body;
+    const config = await prisma.config.findFirst();
+
+    if (!config || !config.smtpUser || !config.smtpPass) {
+      return res.status(400).json({ error: 'SMTP not configured' });
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: config.smtpHost,
+      port: config.smtpPort,
+      secure: config.smtpPort === 465,
+      auth: {
+        user: config.smtpUser,
+        pass: config.smtpPass,
+      },
+      tls: {
+        ciphers: 'SSLv3'
+      }
+    });
+
+    await transporter.sendMail({
+      from: config.smtpUser,
+      to: email,
+      subject: 'Test Email - Birthday App',
+      text: 'This is a test email from your Birthday App configuration.',
+      html: '<p>This is a test email from your <strong>Birthday App</strong> configuration.</p>'
+    });
+
+    res.json({ message: 'Test email sent successfully' });
+  } catch (error) {
+    console.error('Test email error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // --- Email Service & Scheduler ---
 
 const sendBirthdayEmails = async () => {
