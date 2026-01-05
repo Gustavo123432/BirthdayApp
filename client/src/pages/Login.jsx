@@ -44,11 +44,11 @@ export default function Login() {
                 if (success) {
                     navigate(from, { replace: true });
                 } else {
-                    setError('Invalid username or password');
+                    setError('Nome de utilizador ou palavra-passe inválidos');
                 }
             }
         } catch (err) {
-            setError(err.response?.data?.error || 'An error occurred');
+            setError(err.response?.data?.error || 'Ocorreu um erro');
         }
     };
 
@@ -56,11 +56,11 @@ export default function Login() {
         <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
                 <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                    {isRegistering ? 'Create Admin Account' : 'Sign in to your account'}
+                    {isRegistering ? 'Criar Conta de Administrador' : 'Iniciar Sessão'}
                 </h2>
                 {isRegistering && (
                     <p className="mt-2 text-center text-sm text-gray-600">
-                        This is the first time setup. Please create an admin user.
+                        Esta é a configuração inicial. Por favor, crie um utilizador administrador.
                     </p>
                 )}
             </div>
@@ -70,7 +70,7 @@ export default function Login() {
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         <div>
                             <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                                Username
+                                Nome de Utilizador
                             </label>
                             <div className="mt-1">
                                 <input
@@ -87,7 +87,7 @@ export default function Login() {
 
                         <div>
                             <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                                Password
+                                Palavra-passe
                             </label>
                             <div className="mt-1">
                                 <input
@@ -113,7 +113,7 @@ export default function Login() {
                                 type="submit"
                                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                             >
-                                {isRegistering ? 'Create Account' : 'Sign in'}
+                                {isRegistering ? 'Criar Conta' : 'Entrar'}
                             </button>
                         </div>
                     </form>

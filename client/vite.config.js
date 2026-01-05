@@ -8,5 +8,12 @@ export default defineConfig({
         proxy: {
             '/api': 'http://localhost:3000'
         }
+    },
+    preview: {
+        port: 5173,
+        host: true,
+        proxy: {
+            '/api': 'http://localhost:3000'
+        }
     }
 })

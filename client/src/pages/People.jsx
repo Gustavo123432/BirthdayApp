@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { format } from 'date-fns';
+import { pt } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
 
 export default function People() {
@@ -36,12 +38,12 @@ export default function People() {
             fetchPeople();
         } catch (error) {
             console.error('Error saving person:', error);
-            alert('Error saving person');
+            alert('Erro ao guardar pessoa');
         }
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure?')) return;
+        if (!window.confirm('Tem a certeza?')) return;
         try {
             await axios.delete(`/api/people/${id}`);
             fetchPeople();
@@ -87,7 +89,7 @@ export default function People() {
             }).filter(p => p.name && p.email && p.birthdate);
 
             if (peopleData.length === 0) {
-                setImportMessage('No valid data found in file');
+                setImportMessage('Nenhum dado válido encontrado no ficheiro');
                 return;
             }
 
@@ -97,7 +99,7 @@ export default function People() {
             setTimeout(() => setImportMessage(''), 5000);
         } catch (error) {
             console.error('Import error:', error);
-            setImportMessage('Error importing file: ' + (error.response?.data?.error || error.message));
+            setImportMessage('Erro ao importar ficheiro: ' + (error.response?.data?.error || error.message));
         }
 
         // Reset file input
@@ -106,15 +108,23 @@ export default function People() {
         }
     };
 
+    // ... (existing code) ...
+
     return (
         <div className="space-y-6">
             <div className="md:flex md:items-center md:justify-between">
                 <div className="flex-1 min-w-0">
                     <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                        People Management
+                        Gestão de Pessoas
                     </h2>
                 </div>
                 <div className="mt-4 flex md:mt-0 md:ml-4">
+                    <Link
+                        to="/import-guide"
+                        className="mr-2 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                        Ajuda / Modelo
+                    </Link>
                     <input
                         type="file"
                         ref={fileInputRef}
@@ -127,13 +137,13 @@ export default function People() {
                         htmlFor="excel-upload"
                         className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
                     >
-                        Import Excel
+                        Importar Excel
                     </label>
                 </div>
             </div>
 
             {importMessage && (
-                <div className={`p-4 rounded-md ${importMessage.includes('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                <div className={`p-4 rounded-md ${importMessage.includes('Erro') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
                     {importMessage}
                 </div>
             )}
@@ -142,7 +152,7 @@ export default function People() {
             <div className="bg-white shadow sm:rounded-lg p-6">
                 <form onSubmit={handleSubmit} className="space-y-4 md:space-y-0 md:flex md:gap-4 items-end">
                     <div className="flex-1">
-                        <label className="block text-sm font-medium text-gray-700">Name</label>
+                        <label className="block text-sm font-medium text-gray-700">Nome</label>
                         <input
                             type="text"
                             required
@@ -162,7 +172,7 @@ export default function People() {
                         />
                     </div>
                     <div className="flex-1">
-                        <label className="block text-sm font-medium text-gray-700">Birthdate</label>
+                        <label className="block text-sm font-medium text-gray-700">Data de Nascimento</label>
                         <input
                             type="date"
                             required
@@ -175,7 +185,7 @@ export default function People() {
                         type="submit"
                         className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     >
-                        {isEditing ? 'Update' : 'Add'}
+                        {isEditing ? 'Atualizar' : 'Adicionar'}
                     </button>
                     {isEditing && (
                         <button
@@ -186,7 +196,7 @@ export default function People() {
                             }}
                             className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                         >
-                            Cancel
+                            Cancelar
                         </button>
                     )}
                 </form>
@@ -201,16 +211,16 @@ export default function People() {
                                 <thead className="bg-gray-50">
                                     <tr>
                                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Name
+                                            Nome
                                         </th>
                                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Email
                                         </th>
                                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Birthdate
+                                            Data de Nascimento
                                         </th>
                                         <th scope="col" className="relative px-6 py-3">
-                                            <span className="sr-only">Actions</span>
+                                            <span className="sr-only">Ações</span>
                                         </th>
                                     </tr>
                                 </thead>
@@ -224,20 +234,20 @@ export default function People() {
                                                 {person.email}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {format(new Date(person.birthdate), 'MMMM do, yyyy')}
+                                                {format(new Date(person.birthdate), "d 'de' MMMM, yyyy", { locale: pt })}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <button
                                                     onClick={() => handleEdit(person)}
                                                     className="text-indigo-600 hover:text-indigo-900 mr-4"
                                                 >
-                                                    Edit
+                                                    Editar
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(person.id)}
                                                     className="text-red-600 hover:text-red-900"
                                                 >
-                                                    Delete
+                                                    Apagar
                                                 </button>
                                             </td>
                                         </tr>

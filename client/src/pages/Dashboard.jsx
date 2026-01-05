@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { format, isSameDay, setYear } from 'date-fns';
+import { pt } from 'date-fns/locale';
 
 export default function Dashboard() {
     const [people, setPeople] = useState([]);
@@ -44,12 +45,12 @@ export default function Dashboard() {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Painel de Controlo</h1>
 
             <div className="bg-white shadow overflow-hidden sm:rounded-lg">
                 <div className="px-4 py-5 sm:px-6">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">Upcoming Birthdays</h3>
-                    <p className="mt-1 max-w-2xl text-sm text-gray-500">Next 5 celebrations.</p>
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">Próximos Aniversários</h3>
+                    <p className="mt-1 max-w-2xl text-sm text-gray-500">As próximas 5 celebrações.</p>
                 </div>
                 <div className="border-t border-gray-200">
                     <ul role="list" className="divide-y divide-gray-200">
@@ -61,7 +62,7 @@ export default function Dashboard() {
                                     </div>
                                     <div className="ml-2 flex-shrink-0 flex">
                                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                            {format(person.nextBirthday, 'MMMM do')}
+                                            {format(person.nextBirthday, "d 'de' MMMM", { locale: pt })}
                                         </span>
                                     </div>
                                 </div>
@@ -76,7 +77,7 @@ export default function Dashboard() {
                         ))}
                         {upcoming.length === 0 && (
                             <li className="px-4 py-4 sm:px-6 text-sm text-gray-500">
-                                No upcoming birthdays found.
+                                Não foram encontrados próximos aniversários.
                             </li>
                         )}
                     </ul>

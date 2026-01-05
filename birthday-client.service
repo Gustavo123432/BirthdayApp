@@ -1,0 +1,16 @@
+[Unit]
+Description=Birthday App Client Service
+After=network.target birthday-api.service
+
+[Service]
+# Replace /path/to/app with the actual path
+WorkingDirectory=/path/to/app/client
+Environment=NODE_ENV=production
+Type=simple
+User=root
+# Run vite preview on port 5173
+ExecStart=/usr/bin/npm run dev -- --host 0.0.0.0 --port 5173
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

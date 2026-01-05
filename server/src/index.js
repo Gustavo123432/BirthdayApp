@@ -314,6 +314,8 @@ const sendBirthdayEmails = async () => {
 
 cron.schedule('0 8 * * *', sendBirthdayEmails);
 
+
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

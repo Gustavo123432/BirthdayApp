@@ -1,0 +1,15 @@
+[Unit]
+Description=Birthday App API Service
+After=network.target
+
+[Service]
+# Replace /path/to/app with the actual path
+WorkingDirectory=/path/to/app/server
+Environment=NODE_ENV=production
+Type=simple
+User=root
+ExecStart=/usr/bin/node src/index.js
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

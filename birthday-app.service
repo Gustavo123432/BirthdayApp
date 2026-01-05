@@ -1,0 +1,25 @@
+[Unit]
+Description=Birthday App Service
+After=network.target
+
+[Service]
+# Replace /path/to/app with the actual path on your server
+# e.g., /var/www/birthday-app or /home/ubuntu/birthday-app
+WorkingDirectory=/path/to/app/server
+Environment=NODE_ENV=production
+# If you use a .env file, you might not need to set env vars here, 
+# but ensure the .env file is in the WorkingDirectory.
+# Environment=PORT=3000
+# Environment=DATABASE_URL=...
+
+Type=simple
+User=root
+# Or use a specific user:
+# User=ubuntu
+
+# Command to start the app
+ExecStart=/usr/bin/node src/index.js
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

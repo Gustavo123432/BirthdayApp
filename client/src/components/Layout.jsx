@@ -7,9 +7,9 @@ export default function Layout() {
     const { user, logout } = useAuth();
 
     const navItems = [
-        { path: '/', label: 'Dashboard' },
-        { path: '/people', label: 'People' },
-        { path: '/settings', label: 'Settings' },
+        { path: '/', label: 'Painel de Controlo' },
+        { path: '/people', label: 'Pessoas' },
+        { path: '/settings', label: 'Definições' },
     ];
 
     return (
@@ -19,7 +19,7 @@ export default function Layout() {
                     <div className="flex justify-between h-16">
                         <div className="flex">
                             <div className="flex-shrink-0 flex items-center">
-                                <span className="text-xl font-bold text-indigo-600">BirthdayManager</span>
+                                <span className="text-xl font-bold text-indigo-600">Gestor de Aniversários</span>
                             </div>
                             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
                                 {navItems.map((item) => (
@@ -27,8 +27,8 @@ export default function Layout() {
                                         key={item.path}
                                         to={item.path}
                                         className={`${location.pathname === item.path
-                                                ? 'border-indigo-500 text-gray-900'
-                                                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                                            ? 'border-indigo-500 text-gray-900'
+                                            : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                                             } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
                                     >
                                         {item.label}
@@ -44,7 +44,7 @@ export default function Layout() {
                                 onClick={logout}
                                 className="text-sm font-medium text-gray-500 hover:text-gray-700"
                             >
-                                Sign out
+                                Terminar Sessão
                             </button>
                         </div>
                     </div>
