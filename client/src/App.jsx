@@ -8,6 +8,7 @@ import People from './pages/People';
 import Settings from './pages/Settings';
 import ImportGuide from './pages/ImportGuide';
 import Login from './pages/Login';
+import Users from './pages/Users';
 
 function App() {
     return (
@@ -25,6 +26,7 @@ function App() {
                         <Route path="people" element={<People />} />
                         <Route path="import-guide" element={<ImportGuide />} />
                         <Route path="settings" element={<Settings />} />
+                        <Route path="users" element={<Users />} />
                     </Route>
                 </Routes>
             </Router>

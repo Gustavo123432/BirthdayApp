@@ -256,6 +256,93 @@ app.post('/api/config/test-email', authenticateToken, async (req, res) => {
   }
 });
 
+// --- User Management ---
+
+// Get all users
+app.get('/api/users', authenticateToken, async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        username: true,
+        createdAt: true,
+      },
+    });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create a new user
+app.post('/api/users', authenticateToken, async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    const existingUser = await prisma.user.findUnique({ where: { username } });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Username already taken' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await prisma.user.create({
+      data: {
+        username,
+        passwordHash: hashedPassword,
+      },
+      select: {
+        id: true,
+        username: true,
+        createdAt: true,
+      }
+    });
+
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update user password
+app.put('/api/users/:id/password', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { password } = req.body;
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await prisma.user.update({
+      where: { id: parseInt(id) },
+      data: {
+        passwordHash: hashedPassword,
+      },
+    });
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete a user
+app.delete('/api/users/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const requestingUserId = req.user.id;
+
+    if (parseInt(id) === requestingUserId) {
+      return res.status(400).json({ error: 'Cannot delete yourself' });
+    }
+
+    await prisma.user.delete({
+      where: { id: parseInt(id) },
+    });
+
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // --- Email Service & Scheduler ---
 
 const sendBirthdayEmails = async () => {

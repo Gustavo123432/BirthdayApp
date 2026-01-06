@@ -69,27 +69,59 @@ export default function People() {
             const data = await file.arrayBuffer();
             const workbook = XLSX.read(data);
             const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+            // raw: false ensures dates come as formatted strings if they are dates in Excel
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "", raw: false });
+
+            console.log('Dados Excel brutos:', jsonData); // Debug
 
             const peopleData = jsonData.map(row => {
-                // Parse date from DD/MM/YYYY format
-                const dateParts = row['Data de Nascimento']?.split('/');
+                // Helper function to find case-insensitive keys
+                const findValue = (keys) => {
+                    const rowKeys = Object.keys(row);
+                    const match = rowKeys.find(k => keys.some(key => k.trim().toLowerCase() === key.toLowerCase()));
+                    return match ? row[match] : null;
+                };
+
+                const name = findValue(['nome', 'name', 'nomes', 'full name']);
+                const email = findValue(['email', 'e-mail', 'mail']);
+                const rawDate = findValue(['data de nascimento', 'data nascimento', 'nascimento', 'birthdate', 'birth date', 'data']);
+
+                if (!name || !email || !rawDate) return null;
+
+                // Parse date
                 let birthdate;
-                if (dateParts && dateParts.length === 3) {
-                    birthdate = `${dateParts[2]}-${dateParts[1].padStart(2, '0')}-${dateParts[0].padStart(2, '0')}`;
-                } else {
-                    birthdate = row['Data de Nascimento'];
+                if (typeof rawDate === 'string') {
+                    // Try DD/MM/YYYY
+                    const partsSlash = rawDate.split('/');
+                    if (partsSlash.length === 3) {
+                        // Assumes DD/MM/YYYY
+                        birthdate = `${partsSlash[2]}-${partsSlash[1].padStart(2, '0')}-${partsSlash[0].padStart(2, '0')}`;
+                    } else if (rawDate.includes('-')) {
+                        // Maybe already YYYY-MM-DD or DD-MM-YYYY, let's try to standardize
+                        birthdate = rawDate;
+                    }
+                }
+
+                // Fallback for simple validation
+                if (!birthdate || isNaN(new Date(birthdate).getTime())) {
+                    // Try to see if it's already a valid date string accepted by constructor
+                    const d = new Date(rawDate);
+                    if (!isNaN(d.getTime())) {
+                        birthdate = format(d, 'yyyy-MM-dd');
+                    } else {
+                        return null; // Invalid date
+                    }
                 }
 
                 return {
-                    name: row['Nome'] || row['Name'] || '',
-                    email: row['Email'] || '',
+                    name: name.toString().trim(),
+                    email: email.toString().trim(),
                     birthdate: birthdate
                 };
-            }).filter(p => p.name && p.email && p.birthdate);
+            }).filter(p => p !== null);
 
             if (peopleData.length === 0) {
-                setImportMessage('Nenhum dado válido encontrado no ficheiro');
+                setImportMessage('Não foram encontrados dados válidos. Verifique as colunas: "Nome", "Email", "Data de Nascimento".');
                 return;
             }
 

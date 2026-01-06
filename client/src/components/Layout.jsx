@@ -9,6 +9,7 @@ export default function Layout() {
     const navItems = [
         { path: '/', label: 'Painel de Controlo' },
         { path: '/people', label: 'Pessoas' },
+        { path: '/users', label: 'Utilizadores' },
         { path: '/settings', label: 'Definições' },
     ];
 
