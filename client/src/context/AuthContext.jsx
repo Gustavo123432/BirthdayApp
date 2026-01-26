@@ -7,14 +7,25 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    // Helper to decode JWT
+    const parseJwt = (token) => {
+        try {
+            return JSON.parse(atob(token.split('.')[1]));
+        } catch (e) {
+            return null;
+        }
+    };
+
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
-            // Ideally we would validate the token with the backend here,
-            // but for now we'll just assume it's valid if present.
-            // We could decode it to get the username.
-            setUser({ token });
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            const decoded = parseJwt(token);
+            if (decoded) {
+                setUser({ ...decoded, token });
+                axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            } else {
+                localStorage.removeItem('token');
+            }
         }
         setLoading(false);
     }, []);
@@ -24,7 +35,8 @@ export const AuthProvider = ({ children }) => {
             const res = await axios.post('/api/auth/login', { username, password });
             const token = res.data.accessToken;
             localStorage.setItem('token', token);
-            setUser({ token, username });
+            const decoded = parseJwt(token);
+            setUser({ ...decoded, token });
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             return true;
         } catch (error) {

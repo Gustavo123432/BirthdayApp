@@ -9,18 +9,19 @@ echo "Starting deployment setup (Separated Services)..."
 echo "Installing client dependencies..."
 cd client
 npm install
-echo "Checking client build..."
-if [ -d "dist" ]; then
-    echo "Client build found (dist folder). Skipping build to save memory."
-else
-    echo "Building client..."
-    npm run build
-fi
+echo "Building client..."
+npm run build
 cd ..
 
 echo "Installing server dependencies..."
 cd server
 npm install
+echo "Generating Prisma client..."
+npx prisma generate
+echo "Running database migrations..."
+npx prisma db push
+echo "Migrating data (linking to EPVC)..."
+node migrate_data.js
 cd ..
 
 # 2. Setup Systemd Services
@@ -35,9 +36,11 @@ if [ ! -f "$SERVICE_API" ]; then
     exit 1
 fi
 echo "Updating paths in $SERVICE_API..."
-sed -i "s|/path/to/app|$APP_DIR|g" $SERVICE_API
-echo "Copying $SERVICE_API..."
-sudo cp $SERVICE_API /etc/systemd/system/
+cp $SERVICE_API ${SERVICE_API}.tmp
+sed -i "s|/path/to/app|$APP_DIR|g" ${SERVICE_API}.tmp
+echo "Copying $SERVICE_API to systemd..."
+sudo cp ${SERVICE_API}.tmp /etc/systemd/system/$SERVICE_API
+rm ${SERVICE_API}.tmp
 
 # --- Client Service ---
 SERVICE_CLIENT="birthday-client.service"
@@ -46,9 +49,11 @@ if [ ! -f "$SERVICE_CLIENT" ]; then
     exit 1
 fi
 echo "Updating paths in $SERVICE_CLIENT..."
-sed -i "s|/path/to/app|$APP_DIR|g" $SERVICE_CLIENT
-echo "Copying $SERVICE_CLIENT..."
-sudo cp $SERVICE_CLIENT /etc/systemd/system/
+cp $SERVICE_CLIENT ${SERVICE_CLIENT}.tmp
+sed -i "s|/path/to/app|$APP_DIR|g" ${SERVICE_CLIENT}.tmp
+echo "Copying $SERVICE_CLIENT to systemd..."
+sudo cp ${SERVICE_CLIENT}.tmp /etc/systemd/system/$SERVICE_CLIENT
+rm ${SERVICE_CLIENT}.tmp
 
 # 3. Enable and Start
 echo "Reloading systemd..."

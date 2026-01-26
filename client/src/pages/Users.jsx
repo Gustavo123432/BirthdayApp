@@ -2,14 +2,34 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
+import { useCompany } from '../context/CompanyContext';
+import MultiSelect from '../components/MultiSelect';
+
+// --- SVGs ---
+const EyeIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-gray-400">
+        <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+        <path fillRule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 010-1.113zM17.25 12a5.25 5.25 0 11-10.5 0 5.25 5.25 0 0110.5 0z" clipRule="evenodd" />
+    </svg>
+);
+
+const EyeSlashIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-gray-400">
+        <path d="M3.53 2.47a.75.75 0 00-1.06 1.06l18 18a.75.75 0 101.06-1.06l-18-18zM22.676 12.553a11.249 11.249 0 01-2.631 4.31l-3.099-3.099a5.25 5.25 0 00-6.71-6.71L7.759 4.577a11.217 11.217 0 014.242-.827c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113z" />
+        <path d="M5.535 9.423l-1.474-1.474a11.272 11.272 0 00-.738.935 1.762 1.762 0 000 1.113c1.487 4.471 5.705 7.697 10.677 7.697 1.258 0 2.493-.207 3.668-.595L15.28 14.71a5.251 5.251 0 01-7.904-7.904l-1.841-1.383z" />
+    </svg>
+);
 
 export default function Users() {
     const [users, setUsers] = useState([]);
-    const [formData, setFormData] = useState({ username: '', password: '', confirmPassword: '' });
+    const [formData, setFormData] = useState({ username: '', password: '', confirmPassword: '', companyIds: [] });
+    const { companies } = useCompany();
+    const [isManagingCompanies, setIsManagingCompanies] = useState(null);
+    const [selectedCompanies, setSelectedCompanies] = useState([]);
     const [isChangingPassword, setIsChangingPassword] = useState(null);
     const [passwordData, setPasswordData] = useState({ password: '', confirmPassword: '' });
     const [message, setMessage] = useState('');
-    const [modalMessage, setModalMessage] = useState(''); // Mensagem específica para o modal
+    const [modalMessage, setModalMessage] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -39,28 +59,29 @@ export default function Users() {
         if (!hasSpecialChar) errors.push("um caracter especial");
 
         if (errors.length > 0) {
-            return "A password deve ter: " + errors.join(", ") + ".";
+            return "A palavra-passe deve ter: " + errors.join(", ") + ".";
         }
         return null;
     };
 
     const handleCreateUser = async (e) => {
         e.preventDefault();
-
         if (formData.password !== formData.confirmPassword) {
-            setMessage('Erro: As passwords não coincidem.');
+            setMessage('Erro: As palavras-passe não coincidem.');
             return;
         }
-
         const passwordError = validatePassword(formData.password);
         if (passwordError) {
             setMessage('Erro: ' + passwordError);
             return;
         }
-
         try {
-            await axios.post('/api/users', { username: formData.username, password: formData.password });
-            setFormData({ username: '', password: '', confirmPassword: '' });
+            await axios.post('/api/users', {
+                username: formData.username,
+                password: formData.password,
+                companyIds: formData.companyIds
+            });
+            setFormData({ username: '', password: '', confirmPassword: '', companyIds: [] });
             setMessage('Utilizador criado com sucesso!');
             fetchUsers();
             setTimeout(() => setMessage(''), 3000);
@@ -85,52 +106,45 @@ export default function Users() {
 
     const handlePasswordUpdate = async (e) => {
         e.preventDefault();
-        setModalMessage(''); // Limpa mensagens anteriores
-
+        setModalMessage('');
         if (passwordData.password !== passwordData.confirmPassword) {
-            setModalMessage('Erro: As passwords não coincidem.');
+            setModalMessage('Erro: As palavras-passe não coincidem.');
             return;
         }
-
         const passwordError = validatePassword(passwordData.password);
         if (passwordError) {
             setModalMessage('Erro: ' + passwordError);
             return;
         }
-
         try {
             await axios.put(`/api/users/${isChangingPassword}/password`, { password: passwordData.password });
-
-            // Sucesso: fecha modal e mostra mensagem na página principal
             setIsChangingPassword(null);
             setPasswordData({ password: '', confirmPassword: '' });
-            setModalMessage('');
-
-            setMessage('Password atualizada com sucesso!');
+            setMessage('Palavra-passe atualizada com sucesso!');
             setTimeout(() => setMessage(''), 3000);
         } catch (error) {
             console.error('Error updating password:', error);
-            setModalMessage('Erro ao atualizar password: ' + (error.response?.data?.error || error.message));
+            setModalMessage('Erro ao atualizar palavra-passe: ' + (error.response?.data?.error || error.message));
+        }
+    };
+
+    const handleUpdateCompanies = async (e) => {
+        e.preventDefault();
+        setModalMessage('');
+        try {
+            await axios.put(`/api/users/${isManagingCompanies}/companies`, { companyIds: selectedCompanies });
+            setIsManagingCompanies(null);
+            setMessage('Acessos atualizados com sucesso!');
+            fetchUsers();
+            setTimeout(() => setMessage(''), 3000);
+        } catch (error) {
+            console.error('Error updating companies:', error);
+            setModalMessage('Erro ao atualizar empresas: ' + (error.response?.data?.error || error.message));
         }
     };
 
     const toggleShowPassword = () => setShowPassword(!showPassword);
     const toggleShowConfirmPassword = () => setShowConfirmPassword(!showConfirmPassword);
-
-    // SVGs inline para evitar dependências externas que falham no build
-    const EyeIcon = () => (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-gray-400">
-            <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
-            <path fillRule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 010-1.113zM17.25 12a5.25 5.25 0 11-10.5 0 5.25 5.25 0 0110.5 0z" clipRule="evenodd" />
-        </svg>
-    );
-
-    const EyeSlashIcon = () => (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-gray-400">
-            <path d="M3.53 2.47a.75.75 0 00-1.06 1.06l18 18a.75.75 0 101.06-1.06l-18-18zM22.676 12.553a11.249 11.249 0 01-2.631 4.31l-3.099-3.099a5.25 5.25 0 00-6.71-6.71L7.759 4.577a11.217 11.217 0 014.242-.827c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113z" />
-            <path d="M5.535 9.423l-1.474-1.474a11.272 11.272 0 00-.738.935 1.762 1.762 0 000 1.113c1.487 4.471 5.705 7.697 10.677 7.697 1.258 0 2.493-.207 3.668-.595L15.28 14.71a5.251 5.251 0 01-7.904-7.904l-1.841-1.383z" />
-        </svg>
-    );
 
     return (
         <div className="space-y-6">
@@ -151,9 +165,9 @@ export default function Users() {
             {/* Create User Form */}
             <div className="bg-white shadow sm:rounded-lg p-6">
                 <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Novo Utilizador</h3>
-                <form onSubmit={handleCreateUser} className="space-y-4 md:space-y-0 md:flex md:gap-4 items-start">
-                    <div className="flex-1">
-                        <label className="block text-sm font-medium text-gray-700">Username</label>
+                <form onSubmit={handleCreateUser} className="space-y-4 lg:space-y-0 lg:flex lg:gap-4 items-end flex-wrap">
+                    <div className="flex-1 min-w-[200px]">
+                        <label className="block text-sm font-medium text-gray-700">Nome de utilizador</label>
                         <input
                             type="text"
                             required
@@ -162,8 +176,8 @@ export default function Users() {
                             onChange={e => setFormData({ ...formData, username: e.target.value })}
                         />
                     </div>
-                    <div className="flex-1 relative">
-                        <label className="block text-sm font-medium text-gray-700">Password</label>
+                    <div className="flex-1 min-w-[200px]">
+                        <label className="block text-sm font-medium text-gray-700">Palavra-passe</label>
                         <div className="mt-1 relative rounded-md shadow-sm">
                             <input
                                 type={showPassword ? "text" : "password"}
@@ -177,8 +191,8 @@ export default function Users() {
                             </div>
                         </div>
                     </div>
-                    <div className="flex-1 relative">
-                        <label className="block text-sm font-medium text-gray-700">Confirmar Password</label>
+                    <div className="flex-1 min-w-[200px]">
+                        <label className="block text-sm font-medium text-gray-700">Confirmar palavra-passe</label>
                         <div className="mt-1 relative rounded-md shadow-sm">
                             <input
                                 type={showConfirmPassword ? "text" : "password"}
@@ -192,12 +206,25 @@ export default function Users() {
                             </div>
                         </div>
                     </div>
-                    <button
-                        type="submit"
-                        className="mt-6 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 h-10"
-                    >
-                        Criar
-                    </button>
+
+                    <div className="flex-1 min-w-[300px]">
+                        <MultiSelect
+                            label="Empresas com Acesso"
+                            items={companies}
+                            selectedIds={formData.companyIds}
+                            onChange={(ids) => setFormData({ ...formData, companyIds: ids })}
+                            placeholder="Selecionar empresas..."
+                        />
+                    </div>
+
+                    <div className="w-full lg:w-auto">
+                        <button
+                            type="submit"
+                            className="w-full lg:w-auto inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 h-[42px] items-center"
+                        >
+                            Criar Utilizador
+                        </button>
+                    </div>
                 </form>
             </div>
 
@@ -210,10 +237,13 @@ export default function Users() {
                                 <thead className="bg-gray-50">
                                     <tr>
                                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Username
+                                            Nome de utilizador
                                         </th>
                                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Criado em
+                                        </th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Empresas
                                         </th>
                                         <th scope="col" className="relative px-6 py-3">
                                             <span className="sr-only">Ações</span>
@@ -222,12 +252,33 @@ export default function Users() {
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {users.map((user) => (
-                                        <tr key={user.id}>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border-l-4 border-transparent hover:border-indigo-500">
                                                 {user.username}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {format(new Date(user.createdAt), "d 'de' MMMM, yyyy", { locale: pt })}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-gray-500">
+                                                <div
+                                                    className="flex flex-wrap gap-1 cursor-pointer hover:bg-indigo-50 p-1.5 rounded-md border border-dashed border-gray-200 hover:border-indigo-300 transition-all group min-h-[36px] items-center"
+                                                    onClick={() => {
+                                                        setIsManagingCompanies(user.id);
+                                                        setSelectedCompanies(user.companies.map(c => c.id));
+                                                        setModalMessage('');
+                                                    }}
+                                                >
+                                                    {user.companies && user.companies.length > 0 ? (
+                                                        user.companies.map(c => (
+                                                            <span key={c.id} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                                                {c.name}
+                                                            </span>
+                                                        ))
+                                                    ) : (
+                                                        <span className="text-gray-400 italic text-xs ml-1">Sem acesso a empresas</span>
+                                                    )}
+                                                    <span className="ml-auto opacity-0 group-hover:opacity-100 text-indigo-600 text-[10px] font-bold uppercase tracking-wider transition-opacity px-2">Editar</span>
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <button
@@ -238,13 +289,13 @@ export default function Users() {
                                                         setShowConfirmPassword(false);
                                                         setPasswordData({ password: '', confirmPassword: '' });
                                                     }}
-                                                    className="text-indigo-600 hover:text-indigo-900 mr-4"
+                                                    className="text-indigo-600 hover:text-indigo-900 mr-4 bg-indigo-50 px-3 py-1.5 rounded-md transition-colors"
                                                 >
-                                                    Alterar Password
+                                                    Alterar palavra-passe
                                                 </button>
                                                 <button
                                                     onClick={() => handleDeleteUser(user.id)}
-                                                    className="text-red-600 hover:text-red-900"
+                                                    className="text-red-600 hover:text-red-900 hover:bg-red-50 px-3 py-1.5 rounded-md transition-colors"
                                                 >
                                                     Apagar
                                                 </button>
@@ -260,66 +311,104 @@ export default function Users() {
 
             {/* Change Password Modal */}
             {isChangingPassword && (
-                <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                <div className="fixed z-[60] inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
                     <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
                         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setIsChangingPassword(null)}></div>
                         <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
                         <div className="inline-block aligns-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
                             <form onSubmit={handlePasswordUpdate}>
                                 <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                                    <div className="sm:flex sm:items-start">
-                                        <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                                            <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                                                Alterar Password
-                                            </h3>
+                                    <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">
+                                        Alterar palavra-passe
+                                    </h3>
 
-                                            {/* Mensagem de ERRO dentro do modal */}
-                                            {modalMessage && (
-                                                <div className={`mt-4 p-2 rounded-md ${modalMessage.includes('Erro') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'} text-sm`}>
-                                                    {modalMessage}
-                                                </div>
-                                            )}
+                                    {modalMessage && (
+                                        <div className={`mb-4 p-3 rounded-md ${modalMessage.includes('Erro') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'} text-sm`}>
+                                            {modalMessage}
+                                        </div>
+                                    )}
 
-                                            <div className="mt-4 space-y-4">
-                                                <div className="relative">
-                                                    <label className="block text-sm font-medium text-gray-700">Nova Password</label>
-                                                    <div className="mt-1 relative rounded-md shadow-sm">
-                                                        <input
-                                                            type={showPassword ? "text" : "password"}
-                                                            required
-                                                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2 pr-10"
-                                                            value={passwordData.password}
-                                                            onChange={e => setPasswordData({ ...passwordData, password: e.target.value })}
-                                                        />
-                                                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" onClick={toggleShowPassword}>
-                                                            {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
-                                                        </div>
-                                                    </div>
+                                    <div className="space-y-4 text-left">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Nova palavra-passe</label>
+                                            <div className="mt-1 relative rounded-md shadow-sm">
+                                                <input
+                                                    type={showPassword ? "text" : "password"}
+                                                    required
+                                                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2 pr-10"
+                                                    value={passwordData.password}
+                                                    onChange={e => setPasswordData({ ...passwordData, password: e.target.value })}
+                                                />
+                                                <div className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" onClick={toggleShowPassword}>
+                                                    {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
                                                 </div>
-                                                <div className="relative">
-                                                    <label className="block text-sm font-medium text-gray-700">Confirmar Nova Password</label>
-                                                    <div className="mt-1 relative rounded-md shadow-sm">
-                                                        <input
-                                                            type={showConfirmPassword ? "text" : "password"}
-                                                            required
-                                                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2 pr-10"
-                                                            value={passwordData.confirmPassword}
-                                                            onChange={e => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                                                        />
-                                                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" onClick={toggleShowConfirmPassword}>
-                                                            {showConfirmPassword ? <EyeSlashIcon /> : <EyeIcon />}
-                                                        </div>
-                                                    </div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Confirmar nova palavra-passe</label>
+                                            <div className="mt-1 relative rounded-md shadow-sm">
+                                                <input
+                                                    type={showConfirmPassword ? "text" : "password"}
+                                                    required
+                                                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2 pr-10"
+                                                    value={passwordData.confirmPassword}
+                                                    onChange={e => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                                                />
+                                                <div className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" onClick={toggleShowConfirmPassword}>
+                                                    {showConfirmPassword ? <EyeSlashIcon /> : <EyeIcon />}
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-lg">
                                     <button type="submit" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
-                                        Alterar
+                                        Alterar palavra-passe
                                     </button>
                                     <button type="button" onClick={() => setIsChangingPassword(null)} className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Manage Companies Modal */}
+            {isManagingCompanies && (
+                <div className="fixed z-[60] inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                    <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setIsManagingCompanies(null)}></div>
+                        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                        <div className="inline-block aligns-bottom bg-white rounded-lg text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
+                            <form onSubmit={handleUpdateCompanies}>
+                                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 overflow-visible text-left">
+                                    <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">
+                                        Gerir Acessos a Empresas
+                                    </h3>
+
+                                    {modalMessage && (
+                                        <div className="mb-4 p-3 rounded-md bg-red-50 text-red-700 text-sm border border-red-100">
+                                            {modalMessage}
+                                        </div>
+                                    )}
+
+                                    <div className="min-h-[280px]">
+                                        <MultiSelect
+                                            items={companies}
+                                            selectedIds={selectedCompanies}
+                                            onChange={(ids) => setSelectedCompanies(ids)}
+                                            label="Selecione as empresas para este utilizador"
+                                            placeholder="Procurar empresas..."
+                                        />
+                                    </div>
+                                </div>
+                                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-lg">
+                                    <button type="submit" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
+                                        Guardar Alterações
+                                    </button>
+                                    <button type="button" onClick={() => setIsManagingCompanies(null)} className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                                         Cancelar
                                     </button>
                                 </div>

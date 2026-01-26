@@ -1,20 +1,32 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { useCompany } from '../context/CompanyContext';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
+import MultiSelect from '../components/MultiSelect';
 
 export default function People() {
     const [people, setPeople] = useState([]);
-    const [formData, setFormData] = useState({ name: '', email: '', birthdate: '' });
+    const [tags, setTags] = useState([]); // [1]
+    const [formData, setFormData] = useState({ name: '', email: '', birthdate: '', tagIds: [] }); // [2]
     const [isEditing, setIsEditing] = useState(null);
     const [importMessage, setImportMessage] = useState('');
     const fileInputRef = useRef(null);
+    const { selectedCompany } = useCompany();
 
     useEffect(() => {
         fetchPeople();
+        fetchTags(); // [3]
     }, []);
+
+    const fetchTags = async () => {
+        try {
+            const res = await axios.get('/api/tags');
+            setTags(res.data);
+        } catch (error) { console.error(error); }
+    };
 
     const fetchPeople = async () => {
         try {
@@ -33,7 +45,7 @@ export default function People() {
             } else {
                 await axios.post('/api/people', formData);
             }
-            setFormData({ name: '', email: '', birthdate: '' });
+            setFormData({ name: '', email: '', birthdate: '', tagIds: [] }); // Reset tags
             setIsEditing(null);
             fetchPeople();
         } catch (error) {
@@ -57,6 +69,7 @@ export default function People() {
             name: person.name,
             email: person.email,
             birthdate: format(new Date(person.birthdate), 'yyyy-MM-dd'),
+            tagIds: person.tags ? person.tags.map(t => t.id) : [] // Load existing tags
         });
         setIsEditing(person.id);
     };
@@ -84,7 +97,8 @@ export default function People() {
 
                 const name = findValue(['nome', 'name', 'nomes', 'full name']);
                 const email = findValue(['email', 'e-mail', 'mail']);
-                const rawDate = findValue(['data de nascimento', 'data nascimento', 'nascimento', 'birthdate', 'birth date', 'data']);
+                const rawDate = findValue(['data de nascimento', 'data nascimento', 'nascimento', 'birthdate', 'birth date', 'data', 'data_nascimento']);
+                const tagName = findValue(['tag', 'etiqueta', 'grupo', 'tags', 'etiquetas']);
 
                 if (!name || !email || !rawDate) return null;
 
@@ -116,12 +130,13 @@ export default function People() {
                 return {
                     name: name.toString().trim(),
                     email: email.toString().trim(),
-                    birthdate: birthdate
+                    birthdate: birthdate,
+                    tagName: tagName ? tagName.toString().trim() : null
                 };
             }).filter(p => p !== null);
 
             if (peopleData.length === 0) {
-                setImportMessage('Não foram encontrados dados válidos. Verifique as colunas: "Nome", "Email", "Data de Nascimento".');
+                setImportMessage('Não foram encontrados dados válidos. Verifique as colunas: "Nome", "Email", "Data de Nascimento". (Opcional: "Tag")');
                 return;
             }
 
@@ -137,6 +152,25 @@ export default function People() {
         // Reset file input
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
+        }
+    };
+
+    const handleExport = async () => {
+        if (!selectedCompany) return;
+        try {
+            const res = await axios.get(`/api/companies/${selectedCompany.id}/export/people`, {
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `people-${selectedCompany.name}.xlsx`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error('Export error:', error);
+            alert('Erro ao exportar dados');
         }
     };
 
@@ -157,6 +191,12 @@ export default function People() {
                     >
                         Ajuda / Modelo
                     </Link>
+                    <button
+                        onClick={handleExport}
+                        className="mr-2 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                        Exportar Excel
+                    </button>
                     <input
                         type="file"
                         ref={fileInputRef}
@@ -182,7 +222,7 @@ export default function People() {
 
             {/* Form */}
             <div className="bg-white shadow sm:rounded-lg p-6">
-                <form onSubmit={handleSubmit} className="space-y-4 md:space-y-0 md:flex md:gap-4 items-end">
+                <form onSubmit={handleSubmit} className="space-y-4 lg:space-y-0 lg:flex lg:gap-4 items-end flex-wrap">
                     <div className="flex-1">
                         <label className="block text-sm font-medium text-gray-700">Nome</label>
                         <input
@@ -213,18 +253,30 @@ export default function People() {
                             onChange={e => setFormData({ ...formData, birthdate: e.target.value })}
                         />
                     </div>
-                    <button
-                        type="submit"
-                        className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                        {isEditing ? 'Atualizar' : 'Adicionar'}
-                    </button>
+
+                    <div className="flex-1 min-w-[280px]">
+                        <MultiSelect
+                            label="Etiquetas/Grupos"
+                            items={tags}
+                            selectedIds={formData.tagIds}
+                            onChange={(ids) => setFormData({ ...formData, tagIds: ids })}
+                            placeholder="Pesquisar etiquetas..."
+                        />
+                    </div>
+                    <div className="w-full lg:w-auto">
+                        <button
+                            type="submit"
+                            className="w-full lg:w-auto inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 h-[42px] items-center"
+                        >
+                            {isEditing ? 'Atualizar' : 'Adicionar Pessoa'}
+                        </button>
+                    </div>
                     {isEditing && (
                         <button
                             type="button"
                             onClick={() => {
                                 setIsEditing(null);
-                                setFormData({ name: '', email: '', birthdate: '' });
+                                setFormData({ name: '', email: '', birthdate: '', tagIds: [] });
                             }}
                             className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                         >
@@ -251,6 +303,9 @@ export default function People() {
                                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Data de Nascimento
                                         </th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Etiquetas
+                                        </th>
                                         <th scope="col" className="relative px-6 py-3">
                                             <span className="sr-only">Ações</span>
                                         </th>
@@ -267,6 +322,15 @@ export default function People() {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {format(new Date(person.birthdate), "d 'de' MMMM, yyyy", { locale: pt })}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-gray-500">
+                                                <div className="flex flex-wrap gap-1">
+                                                    {person.tags && person.tags.map(t => (
+                                                        <span key={t.id} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                                            {t.name}
+                                                        </span>
+                                                    ))}
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <button

@@ -1,17 +1,21 @@
 import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCompany } from '../context/CompanyContext';
 
 export default function Layout() {
     const location = useLocation();
     const { user, logout } = useAuth();
+    const { selectedCompany, unselectCompany } = useCompany();
+    const navigate = useNavigate();
 
     const navItems = [
         { path: '/', label: 'Painel de Controlo' },
         { path: '/people', label: 'Pessoas' },
-        { path: '/users', label: 'Utilizadores' },
+        user?.role === 'ADMIN' && { path: '/users', label: 'Utilizadores' },
+        { path: '/templates', label: 'Modelos' },
         { path: '/settings', label: 'Definições' },
-    ];
+    ].filter(Boolean);
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -21,6 +25,11 @@ export default function Layout() {
                         <div className="flex">
                             <div className="flex-shrink-0 flex items-center">
                                 <span className="text-xl font-bold text-indigo-600">Gestor de Aniversários</span>
+                                {selectedCompany && (
+                                    <span className="ml-4 px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 text-xs font-medium">
+                                        {selectedCompany.name}
+                                    </span>
+                                )}
                             </div>
                             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
                                 {navItems.map((item) => (
@@ -46,6 +55,15 @@ export default function Layout() {
                                 className="text-sm font-medium text-gray-500 hover:text-gray-700"
                             >
                                 Terminar Sessão
+                            </button>
+                            <button
+                                onClick={() => {
+                                    unselectCompany();
+                                    navigate('/select-company');
+                                }}
+                                className="ml-4 text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                            >
+                                Trocar Empresa
                             </button>
                         </div>
                     </div>

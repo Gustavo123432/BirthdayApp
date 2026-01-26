@@ -4,8 +4,8 @@ import * as XLSX from 'xlsx';
 
 export default function ImportGuide() {
     const handleDownloadTemplate = () => {
-        const headers = ['name', 'email', 'birthdate'];
-        const exampleRow = ['João Silva', 'joao@exemplo.com', '1990-12-31'];
+        const headers = ['nome', 'email', 'data_nascimento', 'etiqueta'];
+        const exampleRow = ['João Silva', 'joao@exemplo.com', '1990-12-31', 'Amigos'];
 
         const ws = XLSX.utils.aoa_to_sheet([headers, exampleRow]);
         const wb = XLSX.utils.book_new();
@@ -26,8 +26,8 @@ export default function ImportGuide() {
                     <div>
                         <h4 className="text-lg font-medium text-gray-900">Como funciona?</h4>
                         <p className="mt-2 text-sm text-gray-500">
-                            Você pode adicionar várias pessoas de uma vez importando um arquivo Excel (.xlsx ou .xls).
-                            O sistema irá ler o arquivo e adicionar todos os contatos válidos à sua lista.
+                            Pode adicionar várias pessoas em simultâneo através da importação de um ficheiro Excel (.xlsx ou .xls).
+                            O sistema irá ler o ficheiro e adicionar todos os contactos válidos à sua lista.
                         </p>
                     </div>
 
@@ -40,9 +40,10 @@ export default function ImportGuide() {
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">name</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">nome</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">email</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">birthdate</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">data_nascimento</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">etiqueta</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
@@ -50,12 +51,13 @@ export default function ImportGuide() {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">João Silva</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">joao@exemplo.com</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1990-12-31</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Amigos</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                         <p className="mt-2 text-xs text-gray-400">
-                            * A data deve estar no formato AAAA-MM-DD ou formato de Data do Excel.
+                            * A data deve estar no formato AAAA-MM-DD (ex: 1990-12-31) ou formato próprio de Data do Excel.
                         </p>
                     </div>
 

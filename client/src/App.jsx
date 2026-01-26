@@ -3,33 +3,53 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import RequireAuth from './components/RequireAuth';
 import Layout from './components/Layout';
+import RequireAdmin from './components/RequireAdmin';
 import Dashboard from './pages/Dashboard';
 import People from './pages/People';
 import Settings from './pages/Settings';
+import Templates from './pages/Templates';
 import ImportGuide from './pages/ImportGuide';
 import Login from './pages/Login';
 import Users from './pages/Users';
+import { CompanyProvider } from './context/CompanyContext';
+import CompanySelection from './pages/CompanySelection';
+import RequireCompany from './components/RequireCompany';
 
 function App() {
     return (
         <AuthProvider>
-            <Router>
-                <Routes>
-                    <Route path="/login" element={<Login />} />
+            <CompanyProvider>
+                <Router>
+                    <Routes>
+                        <Route path="/login" element={<Login />} />
 
-                    <Route path="/" element={
-                        <RequireAuth>
-                            <Layout />
-                        </RequireAuth>
-                    }>
-                        <Route index element={<Dashboard />} />
-                        <Route path="people" element={<People />} />
-                        <Route path="import-guide" element={<ImportGuide />} />
-                        <Route path="settings" element={<Settings />} />
-                        <Route path="users" element={<Users />} />
-                    </Route>
-                </Routes>
-            </Router>
+                        <Route path="/select-company" element={
+                            <RequireAuth>
+                                <CompanySelection />
+                            </RequireAuth>
+                        } />
+
+                        <Route path="/" element={
+                            <RequireAuth>
+                                <RequireCompany>
+                                    <Layout />
+                                </RequireCompany>
+                            </RequireAuth>
+                        }>
+                            <Route index element={<Dashboard />} />
+                            <Route path="people" element={<People />} />
+                            <Route path="import-guide" element={<ImportGuide />} />
+                            <Route path="settings" element={<Settings />} />
+                            <Route path="templates" element={<Templates />} />
+                            <Route path="users" element={
+                                <RequireAdmin>
+                                    <Users />
+                                </RequireAdmin>
+                            } />
+                        </Route>
+                    </Routes>
+                </Router>
+            </CompanyProvider>
         </AuthProvider>
     );
 }

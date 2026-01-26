@@ -7,6 +7,7 @@ export default function Settings() {
         smtpPort: 587,
         smtpUser: '',
         smtpPass: '',
+        // Keeping this for backward compatibility or as a fallback
         emailTemplate: 'Ex.mo(a) {name},\n\nEm nome da Direção, do pessoal docente e não docente, temos o prazer de lhe desejar um feliz aniversário, repleto de saúde, sucesso e momentos de alegria.\n\nQue este dia seja especial e que o próximo ano da sua vida seja marcado por realizações pessoais e profissionais.\n\nCom os nossos melhores cumprimentos,\n\nA Direção\nEscola Profissional de Vila do Conde'
     });
     const [message, setMessage] = useState('');
@@ -96,11 +97,12 @@ export default function Settings() {
                         />
                     </div>
 
-                    <div className="sm:col-span-6">
-                        <label className="block text-sm font-medium text-gray-700">Modelo de Email</label>
-                        <p className="text-xs text-gray-500 mb-2">Use {'{name}'} para inserir o nome da pessoa.</p>
+                    {/* Legacy/Fallback Template */}
+                    <div className="sm:col-span-6 border-t pt-4">
+                        <label className="block text-sm font-medium text-gray-700">Modelo de e-mail de recurso (Global)</label>
+                        <p className="text-xs text-gray-500 mb-2">Usado se não houver um modelo específico definido na página "Modelos".</p>
                         <textarea
-                            rows={12}
+                            rows={6}
                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2"
                             value={config.emailTemplate}
                             onChange={e => setConfig({ ...config, emailTemplate: e.target.value })}
@@ -109,10 +111,10 @@ export default function Settings() {
                 </div>
 
                 <div className="pt-5 border-t border-gray-200">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Testar Configuração</h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Testar configuração</h3>
                     <div className="flex gap-4 items-end">
                         <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-700">Enviar Email de Teste Para</label>
+                            <label className="block text-sm font-medium text-gray-700">Enviar e-mail de teste para</label>
                             <input
                                 type="email"
                                 placeholder="Insira o endereço de email"
@@ -124,14 +126,14 @@ export default function Settings() {
                             type="button"
                             onClick={async () => {
                                 const email = document.getElementById('test-email-input').value;
-                                if (!email) return alert('Por favor insira um endereço de email');
+                                if (!email) return alert('Por favor, insira um endereço de e-mail');
                                 try {
-                                    setMessage('A enviar email de teste...');
+                                    setMessage('A enviar e-mail de teste...');
                                     await axios.post('/api/config/test-email', { email });
-                                    setMessage('Email de teste enviado com sucesso!');
+                                    setMessage('E-mail de teste enviado com sucesso!');
                                 } catch (error) {
                                     console.error(error);
-                                    setMessage('Erro ao enviar email de teste: ' + (error.response?.data?.error || error.message));
+                                    setMessage('Erro ao enviar e-mail de teste: ' + (error.response?.data?.error || error.message));
                                 }
                             }}
                             className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"

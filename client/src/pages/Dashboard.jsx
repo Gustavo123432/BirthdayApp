@@ -17,7 +17,7 @@ export default function Dashboard() {
             setPeople(res.data);
             calculateUpcoming(res.data);
         } catch (error) {
-            console.error('Error fetching people:', error);
+            console.error('Erro ao procurar pessoas:', error);
         }
     };
 
