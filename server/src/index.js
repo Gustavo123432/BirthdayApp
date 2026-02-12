@@ -152,10 +152,11 @@ app.get('/api/companies', authenticateToken, async (req, res) => {
 // Create Company (Admin Only)
 app.post('/api/companies', authenticateToken, checkAdmin, async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, address } = req.body;
     const company = await prisma.company.create({
       data: {
         name,
+        address, // Add address
         users: { connect: { id: req.user.id } } // Connect creator
       }
     });
@@ -168,6 +169,144 @@ app.post('/api/companies', authenticateToken, checkAdmin, async (req, res) => {
     });
 
     res.json(company);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update Company (Admin Only)
+app.put('/api/companies/:id', authenticateToken, checkAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, address } = req.body;
+    const company = await prisma.company.update({
+      where: { id: parseInt(id) },
+      data: { name, address }
+    });
+    res.json(company);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete Company (Admin Only)
+app.delete('/api/companies/:id', authenticateToken, checkAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    // Delete related data first (cascade usually handles this if configured, but let's be safe or rely on cascade)
+    // Prisma Schema doesn't have explicit cascade delete on all relations shown, but we can try.
+    // Actually, let's just delete the company.
+    await prisma.company.delete({
+      where: { id: parseInt(id) }
+    });
+    res.json({ message: 'Company deleted' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// --- Store Request Routes ---
+
+// Submit a Store Request (Public)
+app.post('/api/store-requests', async (req, res) => {
+  try {
+    const { companyName, address, requesterName, requesterEmail } = req.body;
+    const request = await prisma.storeRequest.create({
+      data: { companyName, address, requesterName, requesterEmail }
+    });
+    res.json(request);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get All Store Requests (Admin Only)
+app.get('/api/admin/store-requests', authenticateToken, checkAdmin, async (req, res) => {
+  try {
+    const requests = await prisma.storeRequest.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(requests);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Approve Store Request (Admin Only)
+app.post('/api/admin/store-requests/:id/approve', authenticateToken, checkAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const request = await prisma.storeRequest.findUnique({ where: { id: parseInt(id) } });
+
+    if (!request) return res.status(404).json({ error: 'Request not found' });
+    if (request.status !== 'PENDING') return res.status(400).json({ error: 'Request is not pending' });
+
+    // 1. Create User (if not exists) or find existing?
+    // Simple approach: Create a user with requesterName as username (sanitize?) and a default password.
+    // Let's generate a username from email or name.
+    const username = request.requesterEmail.split('@')[0];
+    const defaultPassword = 'changeMe123';
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
+    // Check if user exists
+    let user = await prisma.user.findUnique({ where: { username } });
+    if (!user) {
+      // If username taken, append random number
+      const checkUser = await prisma.user.findUnique({ where: { username } });
+      let finalUsername = username;
+      if (checkUser) {
+        finalUsername = `${username}${Math.floor(Math.random() * 1000)}`;
+      }
+
+      user = await prisma.user.create({
+        data: {
+          username: finalUsername,
+          passwordHash: hashedPassword,
+          role: 'USER'
+        }
+      });
+    }
+
+    // 2. Create Company
+    const company = await prisma.company.create({
+      data: {
+        name: request.companyName,
+        address: request.address,
+        users: { connect: { id: user.id } }
+      }
+    });
+
+    // 3. Create Default Config
+    await prisma.config.create({
+      data: { companyId: company.id }
+    });
+
+    // 4. Update Request Status
+    await prisma.storeRequest.update({
+      where: { id: parseInt(id) },
+      data: { status: 'APPROVED' }
+    });
+
+    res.json({
+      message: 'Approved',
+      company,
+      user: { username: user.username, temporaryPassword: defaultPassword }
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Reject Store Request (Admin Only)
+app.post('/api/admin/store-requests/:id/reject', authenticateToken, checkAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.storeRequest.update({
+      where: { id: parseInt(id) },
+      data: { status: 'REJECTED' }
+    });
+    res.json({ message: 'Rejected' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

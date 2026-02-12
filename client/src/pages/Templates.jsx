@@ -51,6 +51,7 @@ export default function Templates() {
 
     const handleSaveTemplate = async (tagId, subject, body) => {
         try {
+            await axios.post('/api/templates', { tagId, subject, body });
             setMessage('Modelo guardado!');
             fetchTemplates();
             setTimeout(() => setMessage(''), 3000);

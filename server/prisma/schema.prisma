@@ -11,6 +11,7 @@ datasource db {
 model Company {
   id        Int      @id @default(autoincrement())
   name      String   @unique
+  address   String?  // New field
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   people    Person[]
@@ -18,6 +19,17 @@ model Company {
   users     User[]
   tags      Tag[]
   emailTemplates EmailTemplate[]
+}
+
+model StoreRequest {
+  id             Int      @id @default(autoincrement())
+  companyName    String
+  address        String?
+  requesterName  String
+  requesterEmail String
+  status         String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model Tag {

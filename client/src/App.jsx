@@ -10,6 +10,8 @@ import Settings from './pages/Settings';
 import Templates from './pages/Templates';
 import ImportGuide from './pages/ImportGuide';
 import Login from './pages/Login';
+import StoreRequest from './pages/StoreRequest';
+import AdminDashboard from './pages/AdminDashboard';
 import Users from './pages/Users';
 import { CompanyProvider } from './context/CompanyContext';
 import CompanySelection from './pages/CompanySelection';
@@ -22,6 +24,7 @@ function App() {
                 <Router>
                     <Routes>
                         <Route path="/login" element={<Login />} />
+                        <Route path="/store-request" element={<StoreRequest />} />
 
                         <Route path="/select-company" element={
                             <RequireAuth>
@@ -46,11 +49,16 @@ function App() {
                                     <Users />
                                 </RequireAdmin>
                             } />
+                            <Route path="admin-dashboard" element={
+                                <RequireAdmin>
+                                    <AdminDashboard />
+                                </RequireAdmin>
+                            } />
                         </Route>
                     </Routes>
                 </Router>
             </CompanyProvider>
-        </AuthProvider>
+        </AuthProvider >
     );
 }
 
